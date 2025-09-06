@@ -1,0 +1,26 @@
+# Environments
+.env
+.env.*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+
+# Docker
+mysql_data/
+
+# Logs, Backups, Uploads
+logs/
+backups/
+uploads/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo

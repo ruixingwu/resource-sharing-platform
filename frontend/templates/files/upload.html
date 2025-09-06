@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}上传文件 - 资源共享平台{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow">
+            <div class="card-header">
+                <h4 class="mb-0">上传文件</h4>
+            </div>
+            <div class="card-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">选择文件</label>
+                        <input type="file" class="form-control" id="file" name="file" required>
+                        <div class="form-text">
+                            支持格式：PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, ZIP, RAR等<br>
+                            文件大小限制：250MB
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">文件描述</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="is_public" name="is_public">
+                            <label class="form-check-label" for="is_public">
+                                设为公共文件（所有人可下载）
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div id="progress" style="display: none;">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-text mt-2 text-center"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> 开始上传
+                        </button>
+                    </div>
+                </form>
+                
+                <div id="uploadResult" style="display: none;" class="mt-3">
+                    <div class="alert alert-success" role="alert">
+                        <h5 class="alert-heading">上传成功！</h5>
+                        <p>文件已上传到服务器。</p>
+                        <hr>
+                        <a href="{{ url_for('files.index') }}" class="btn btn-primary">查看文件列表</a>
+                        <a href="{{ url_for('files.upload') }}" class="btn btn-outline-primary">继续上传</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.file-drop-zone {
+    border: 2px dashed #007bff;
+    border-radius: 4px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.file-drop-zone:hover {
+    background-color: #f8f9fa;
+    border-color: #0056b3;
+}
+
+.file-drop-zone.dragover {
+    background-color: #e9ecef;
+    border-color: #0056b3;
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    $('#uploadForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const fileInput = $('#file')[0];
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            alert('请选择文件');
+            return;
+        }
+        
+        const maxSize = 250 * 1024 * 1024; // 250MB
+        if (file.size > maxSize) {
+            alert('文件大小不能超过250MB');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('description', $('#description').val());
+        formData.append('is_public', $('#is_public').is(':checked'));
+        
+        // 显示上传进度
+        $('#progress').show();
+        $('#uploadResult').hide();
+        
+        $.ajax({
+            url: '{{ url_for("files.upload") }}',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                $('#progress').hide();
+                $('#uploadForm')[0].reset();
+                $('#uploadResult').show();
+            },
+            error: function(xhr) {
+                $('#progress').hide();
+                const error = JSON.parse(xhr.responseText);
+                alert(error.error || '上传失败');
+                $('#progress .progress-bar').css('width', '0%');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

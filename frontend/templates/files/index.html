@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}文件列表 - 资源共享平台{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>我的文件</h2>
+            {% if current_user.has_permission('files.upload') %}
+            <a href="{{ url_for('files.upload') }}" class="btn btn-primary">
+                <i class="fas fa-upload"></i> 上传文件
+            </a>
+            {% endif %}
+        </div>
+        
+        <!-- 搜索框 -->
+        <div class="mb-3">
+            <form method="GET" class="row">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="search" 
+                               placeholder="搜索文件名..." value="{{ search or '' }}">
+                        <button type="submit" class="btn btn-outline-secondary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        {% if search %}
+                        <a href="{{ url_for('files.index') }}" class="btn btn-outline-danger">
+                            <i class="fas fa-times"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- 文件列表 -->
+        {% if files.items %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>文件名</th>
+                        <th>大小</th>
+                        <th>类型</th>
+                        <th>上传时间</th>
+                        {% if current_user.is_admin %}
+                        <th>上传者</th>
+                        {% endif %}
+                        <th>公开</th>
+                        <th>下载次数</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files.items %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('files.detail', file_id=file.id) }}">
+                                {{ file.original_filename }}
+                            </a>
+                            {% if file.description %}
+                            <br><small class="text-muted">{{ file.description[:50] }}{% if file.description|length > 50 %}...{% endif %}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ "%.1f"|format(file.file_size/1024/1024) }} MB</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ file.file_type }}</span>
+                        </td>
+                        <td>{{ file.upload_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                        {% if current_user.is_admin %}
+                        <td>{{ file.uploader.username }}</td>
+                        {% endif %}
+                        <td>
+                            {% if file.is_public %}
+                            <i class="fas fa-check text-success"></i>
+                            {% else %}
+                            <i class="fas fa-times text-danger"></i>
+                            {% endif %}
+                        </td>
+                        <td>{{ file.download_count }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('files.download', file_id=file.id) }}" 
+                                   class="btn btn-outline-primary" title="下载">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                {% if current_user.is_admin or current_user.id == file.uploaded_by %}
+                                <button onclick="deleteFile(this, {{ file.id }})" 
+                                        class="btn btn-outline-danger" title="删除">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 分页 -->
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if files.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ files.prev_num }}{% if search %}&search={{ search }}{% endif %}">上一页</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">上一页</span>
+                </li>
+                {% endif %}
+                
+                <li class="page-item active">
+                    <span class="page-link">{{ files.page }} / {{ files.pages }}</span>
+                </li>
+                
+                {% if files.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ files.next_num }}{% if search %}&search={{ search }}{% endif %}">下一页</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">下一页</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-folder-open fa-5x text-muted mb-3"></i>
+            <h4 class="text-muted">暂无文件</h4>
+            <p class="text-muted">开始上传第一个文件吧！</p>
+            {% if current_user.has_permission('files.upload') %}
+            <a href="{{ url_for('files.upload') }}" class="btn btn-primary">
+                <i class="fas fa-upload"></i> 上传文件
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function deleteFile(button, fileId) {
+    if (confirm('确定要删除这个文件吗？')) {
+        $.ajax({
+            url: '/files/' + fileId,
+            method: 'DELETE',
+            success: function(response) {
+                $(button).closest('tr').remove();
+                alert('文件删除成功');
+                location.reload();
+            },
+            error: function(xhr) {
+                const error = JSON.parse(xhr.responseText);
+                alert(error.error || '删除失败');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

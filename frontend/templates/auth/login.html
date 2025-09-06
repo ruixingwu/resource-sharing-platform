@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}登录 - 资源共享平台{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow">
+            <div class="card-header text-center">
+                <h4 class="mb-0">用户登录</h4>
+            </div>
+            <div class="card-body">
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">用户名</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密码</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                            <label class="form-check-label" for="remember">记住我</label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 mb-3">
+                        <i class="fas fa-sign-in-alt"></i> 登录
+                    </button>
+                    
+                    <div class="text-center">
+                        还没有账号？<a href="{{ url_for('auth.register') }}">立即注册</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('#loginForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            username: $('#username').val(),
+            password: $('#password').val(),
+            remember: $('#remember').is(':checked')
+        };
+        
+        $.ajax({
+            url: '{{ url_for("auth.login") }}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+                window.location.href = response.redirect;
+            },
+            error: function(xhr) {
+                const error = JSON.parse(xhr.responseText);
+                alert(error.error || '登录失败');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
